@@ -553,12 +553,38 @@ public final class AutoML extends Lockable<AutoML> implements TimedH2ORunnable {
     if (builder._parms._stopping_tolerance == defaults._stopping_tolerance)
       builder._parms._stopping_tolerance = buildSpec.build_control.stopping_criteria.stopping_tolerance();
 
-    builder.init(false);          // validate parameters
-
     // TODO: handle error_count and messages
 
     Log.debug("Training model: " + algoName + ", time remaining (ms): " + timeRemainingMs());
-    return builder.trainModel();
+    if (H2O.ARGS.client) {
+      H2ONode leader = H2O.CLOUD._memary[0];
+      new RPC<>(leader, new TrainModelTask(algo, job, key, builder._parms)).call().get();
+      return job;
+    } else {
+      return builder.trainModel();
+    }
+  }
+
+  private static class TrainModelTask extends DTask<TrainModelTask> {
+    private Algo _algo;
+    private Job<Model> _job;
+    private Key<Model> _key;
+    private Model.Parameters _parms;
+    private TrainModelTask(Algo algo, Job<Model> job, Key<Model> key, Model.Parameters parms) {
+      _algo = algo;
+      _job = job;
+      _key = key;
+      _parms = parms;
+    }
+    @Override
+    @SuppressWarnings("unchecked")
+    public void compute2() {
+      ModelBuilder mb = ModelBuilder.make(_algo.urlName(), _job, _key);
+      mb._parms = _parms;
+      mb.init(false); // validate parameters
+      mb.trainModel();
+      tryComplete();
+    }
   }
 
   private Key<Grid> gridKey(String algoName) {
