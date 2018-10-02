@@ -60,6 +60,7 @@ public class AstFillNA extends AstPrimitive {
       throw new IllegalArgumentException("Axis must be 0 for columnar 1 for row");
     final int limit = (int) asts[4].exec(env).getNum();
 
+    assert limit >= 0:"The maxlen/limit parameter should be >= 0.";
     if (limit == 0) // fast short cut to do nothing if user set zero limit
       return new ValFrame(fr.deepCopy(Key.make().toString()));
 
@@ -105,11 +106,7 @@ public class AstFillNA extends AstPrimitive {
       }
     }
   }
-
-  /***
-   * This class was shameless copied from FillForwardTaskRow from Pavel.  We gain speed here by not having
-   * to check if the operation is done on forward or backward but increase the code size.
-   */
+  
   private static class FillBackwardTaskRow extends MRTask<FillBackwardTaskRow> {
     private final int _maxLen;
 
