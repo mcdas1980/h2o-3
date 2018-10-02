@@ -21,6 +21,53 @@ public class AstMergeTest extends TestUtil {
   }
 
   @Test
+  public void mergeWithNaOnTheRightMapsToEverythingTest2() {
+    Scope.enter();
+
+    try {
+      Frame fr = new TestFrameBuilder()
+              .withName("leftFrame")
+              .withColNames("ColA",  "ColB")
+              .withVecTypes(Vec.T_CAT, Vec.T_NUM)
+              .withDataForCol(0, ar("a", "b", "c", "e"))
+              .withDataForCol(1, ar(1, 2, 3, 4))
+              .build();
+      Scope.track(fr);
+      Frame holdoutEncodingMap = new TestFrameBuilder()
+              .withName("holdoutEncodingMap")
+              .withColNames( "ColA", "ColC")
+              .withVecTypes(Vec.T_CAT, Vec.T_STR)
+              .withDataForCol(0, ar(null, "c", null))
+              .withDataForCol(1, ar("str42", "no", "yes"))
+              .build();
+      Frame answer = new TestFrameBuilder()
+              .withColNames("ColA",  "ColB", "ColC")
+              .withVecTypes(Vec.T_CAT, Vec.T_NUM, Vec.T_STR)
+              .withDataForCol(0, ar("a", "b", "c", "e"))
+              .withDataForCol(1, ar(1, 2, 3, 4))
+              .withDataForCol(2, ar(null, null, "no", null))
+              .build();
+      Scope.track(answer);
+      Scope.track(holdoutEncodingMap);
+      String tree = "(merge leftFrame holdoutEncodingMap TRUE FALSE [0.0] [0.0] 'auto')";
+      Val val = Rapids.exec(tree);
+      Frame result = val.getFrame();
+      Scope.track(result);
+      System.out.println("\n\nLeft frame: ");
+      printFrames(fr);
+      System.out.println("\n\nRight frame: ");
+      printFrames(holdoutEncodingMap);
+      System.out.println("\n\nMerged frame with command (merge leftFrame holdoutEncodingMap TRUE FALSE [0.0] [0.0]" +
+              " 'auto'): ");
+      printFrames(result);
+      isBitIdentical(result, answer);
+    } finally {
+      Scope.exit();
+    }
+  }
+
+
+  @Test
   public void mergeWithNaOnTheRightMapsToEverythingTest() {
     Scope.enter();
 
