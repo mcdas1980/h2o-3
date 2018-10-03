@@ -553,6 +553,8 @@ public final class AutoML extends Lockable<AutoML> implements TimedH2ORunnable {
     if (builder._parms._stopping_tolerance == defaults._stopping_tolerance)
       builder._parms._stopping_tolerance = buildSpec.build_control.stopping_criteria.stopping_tolerance();
 
+    builder.init(false);          // validate parameters
+
     // TODO: handle error_count and messages
 
     Log.debug("Training model: " + algoName + ", time remaining (ms): " + timeRemainingMs());
